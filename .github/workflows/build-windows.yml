@@ -22,7 +22,7 @@ jobs:
       - name: Run tests
         run: python -m unittest -v
       - name: Build portable EXE
-        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name KHTN-Math-Trainer-Demo app.py
+        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --add-data "web;web" --name KHTN-Math-Trainer-Demo desktop.py
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
