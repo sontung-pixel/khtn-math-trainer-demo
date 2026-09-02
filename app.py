@@ -1,8 +1,11 @@
 import json
 import re
 import tkinter as tk
+import ctypes
 from pathlib import Path
-from tkinter import messagebox, ttk
+from tkinter import messagebox
+
+import customtkinter as ctk
 
 
 APP_NAME = "KHTN Math Trainer - Demo"
@@ -186,127 +189,155 @@ class ProgressStore:
             pass
 
 
-class MathTrainer(tk.Tk):
-    BG = "#0d1321"
-    PANEL = "#151d2f"
-    PANEL_2 = "#1b2640"
-    TEXT = "#edf2ff"
-    MUTED = "#9eabc7"
-    ACCENT = "#7c8cff"
-    SUCCESS = "#50d890"
-    WARNING = "#ffc857"
-    DANGER = "#ff7085"
+class MathTrainer(ctk.CTk):
+    BG = "#0B1020"
+    SIDEBAR = "#10172A"
+    PANEL = "#141D33"
+    PANEL_2 = "#1B2742"
+    INPUT = "#0E1629"
+    BORDER = "#2A3859"
+    TEXT = "#F3F6FF"
+    MUTED = "#9BA9C7"
+    ACCENT = "#756AF8"
+    ACCENT_HOVER = "#887FFF"
+    SUCCESS = "#45D69A"
+    WARNING = "#F5C451"
+    DANGER = "#FF7186"
 
     def __init__(self):
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
         super().__init__()
         self.title(APP_NAME)
-        self.geometry("1120x720")
-        self.minsize(920, 620)
-        self.configure(bg=self.BG)
+        self.geometry("1240x790")
+        self.minsize(1060, 680)
+        self.configure(fg_color=self.BG)
         self.store = ProgressStore()
         self.problem_index = 0
         self.step_index = 0
         self.mode = tk.StringVar(value="informal")
-        self._style()
         self._build()
         self.load_problem(0)
 
-    def _style(self):
-        style = ttk.Style(self)
-        style.theme_use("clam")
-        style.configure("TFrame", background=self.BG)
-        style.configure("Panel.TFrame", background=self.PANEL)
-        style.configure("TButton", font=("Segoe UI", 10, "bold"), padding=(12, 9))
-        style.configure("Accent.TButton", background=self.ACCENT, foreground="white")
-        style.map("Accent.TButton", background=[("active", "#95a1ff")])
-        style.configure("Ghost.TButton", background=self.PANEL_2, foreground=self.TEXT)
-        style.map("Ghost.TButton", background=[("active", "#263452")])
-        style.configure("Horizontal.TProgressbar", troughcolor=self.PANEL_2, background=self.ACCENT)
+    def _label(self, parent, text="", size=14, color=None, weight="normal", **kwargs):
+        kwargs.pop("bg", None)
+        anchor = kwargs.pop("anchor", None)
+        label = ctk.CTkLabel(parent, text=text, text_color=color or self.TEXT,
+                             font=ctk.CTkFont("Segoe UI", size, weight=weight), **kwargs)
+        if anchor:
+            label.configure(anchor=anchor)
+        return label
 
-    def _label(self, parent, text="", size=11, color=None, weight="normal", **kwargs):
-        return tk.Label(parent, text=text, bg=kwargs.pop("bg", parent.cget("bg")),
-                        fg=color or self.TEXT, font=("Segoe UI", size, weight), **kwargs)
+    def _button(self, parent, text, command, primary=False, width=0):
+        return ctk.CTkButton(parent, text=text, command=command, width=width, height=40,
+                             corner_radius=10, border_width=0 if primary else 1,
+                             border_color=self.BORDER,
+                             fg_color=self.ACCENT if primary else self.PANEL_2,
+                             hover_color=self.ACCENT_HOVER if primary else "#263554",
+                             text_color="white", font=ctk.CTkFont("Segoe UI", 13, weight="bold"))
 
     def _build(self):
-        root = ttk.Frame(self)
+        root = ctk.CTkFrame(self, fg_color=self.BG, corner_radius=0)
         root.pack(fill="both", expand=True)
 
-        sidebar = tk.Frame(root, bg="#10182a", width=270)
+        sidebar = ctk.CTkFrame(root, fg_color=self.SIDEBAR, width=292, corner_radius=0)
         sidebar.pack(side="left", fill="y")
         sidebar.pack_propagate(False)
-        self._label(sidebar, "KHTN", 24, self.ACCENT, "bold", bg="#10182a").pack(anchor="w", padx=24, pady=(24, 0))
-        self._label(sidebar, "Math Trainer • Demo", 11, self.MUTED, bg="#10182a").pack(anchor="w", padx=24, pady=(0, 24))
+        brand = ctk.CTkFrame(sidebar, fg_color="transparent")
+        brand.pack(fill="x", padx=24, pady=(25, 20))
+        ctk.CTkLabel(brand, text="K", width=42, height=42, corner_radius=12,
+                     fg_color=self.ACCENT, text_color="white",
+                     font=ctk.CTkFont("Segoe UI", 22, weight="bold")).pack(side="left")
+        brand_text = ctk.CTkFrame(brand, fg_color="transparent")
+        brand_text.pack(side="left", padx=12)
+        self._label(brand_text, "KHTN Math", 19, weight="bold").pack(anchor="w")
+        self._label(brand_text, "TRAINER  •  DEMO V0.2", 10, self.MUTED, "bold").pack(anchor="w")
+
+        self._label(sidebar, "LỘ TRÌNH CỦA BẠN", 10, self.MUTED, "bold").pack(anchor="w", padx=25, pady=(5, 9))
         self.lesson_buttons = []
         for i, problem in enumerate(PROBLEMS):
-            btn = tk.Button(sidebar, text=f"{i+1}. {problem['title']}", anchor="w",
-                            command=lambda idx=i: self.load_problem(idx), relief="flat",
-                            bg="#10182a", fg=self.TEXT, activebackground=self.PANEL_2,
-                            activeforeground="white", font=("Segoe UI", 10), padx=22, pady=12,
-                            cursor="hand2", wraplength=215, justify="left")
-            btn.pack(fill="x")
+            btn = ctk.CTkButton(sidebar, text=f"  {i+1:02d}   {problem['title']}", anchor="w",
+                                command=lambda idx=i: self.load_problem(idx), height=52,
+                                corner_radius=10, fg_color="transparent", hover_color=self.PANEL_2,
+                                text_color=self.TEXT, font=ctk.CTkFont("Segoe UI", 13),
+                                wraplength=220)
+            btn.pack(fill="x", padx=14, pady=3)
             self.lesson_buttons.append(btn)
-        self._label(sidebar, "Dữ liệu được lưu tự động trên máy.", 9, self.MUTED,
-                    bg="#10182a", wraplength=210, justify="left").pack(side="bottom", anchor="w", padx=24, pady=20)
 
-        main = tk.Frame(root, bg=self.BG)
-        main.pack(side="left", fill="both", expand=True, padx=34, pady=24)
+        footer = ctk.CTkFrame(sidebar, fg_color=self.PANEL, corner_radius=12)
+        footer.pack(side="bottom", fill="x", padx=16, pady=18)
+        self._label(footer, "●  HỌC OFFLINE", 10, self.SUCCESS, "bold").pack(anchor="w", padx=15, pady=(12, 3))
+        self._label(footer, "Tiến độ được lưu tự động\ntrên máy của bạn.", 11, self.MUTED,
+                    justify="left").pack(anchor="w", padx=15, pady=(0, 12))
 
-        header = tk.Frame(main, bg=self.BG)
+        main = ctk.CTkFrame(root, fg_color=self.BG, corner_radius=0)
+        main.pack(side="left", fill="both", expand=True, padx=38, pady=27)
+
+        header = ctk.CTkFrame(main, fg_color="transparent")
         header.pack(fill="x")
-        self.source_label = self._label(header, "", 9, self.ACCENT, "bold")
+        self.source_label = self._label(header, "", 11, self.ACCENT, "bold")
         self.source_label.pack(anchor="w")
-        self.title_label = self._label(header, "", 22, weight="bold")
-        self.title_label.pack(anchor="w", pady=(2, 12))
-        self.progress = ttk.Progressbar(header, mode="determinate")
-        self.progress.pack(fill="x")
-        self.progress_label = self._label(header, "", 9, self.MUTED)
-        self.progress_label.pack(anchor="e", pady=(4, 12))
+        self.title_label = self._label(header, "", 28, weight="bold")
+        self.title_label.pack(anchor="w", pady=(2, 13))
+        progress_row = ctk.CTkFrame(header, fg_color="transparent")
+        progress_row.pack(fill="x", pady=(0, 16))
+        self.progress = ctk.CTkProgressBar(progress_row, height=8, corner_radius=4,
+                                           progress_color=self.ACCENT, fg_color=self.PANEL_2)
+        self.progress.pack(side="left", fill="x", expand=True, pady=5)
+        self.progress_label = self._label(progress_row, "", 11, self.MUTED, "bold")
+        self.progress_label.pack(side="right", padx=(16, 0))
 
-        card = tk.Frame(main, bg=self.PANEL, highlightthickness=1, highlightbackground="#25304a")
+        card = ctk.CTkFrame(main, fg_color=self.PANEL, corner_radius=18,
+                            border_width=1, border_color=self.BORDER)
         card.pack(fill="both", expand=True)
-        self.problem_label = self._label(card, "", 14, weight="bold", bg=self.PANEL,
-                                         justify="left", anchor="w", wraplength=720)
-        self.problem_label.pack(fill="x", padx=24, pady=(22, 12))
-        self.goal_label = self._label(card, "", 10, self.MUTED, bg=self.PANEL,
-                                      justify="left", anchor="w", wraplength=720)
-        self.goal_label.pack(fill="x", padx=24, pady=(0, 18))
+        problem_box = ctk.CTkFrame(card, fg_color="#19243D", corner_radius=13)
+        problem_box.pack(fill="x", padx=22, pady=(22, 12))
+        self._label(problem_box, "ĐỀ BÀI", 10, self.ACCENT, "bold").pack(anchor="w", padx=18, pady=(14, 4))
+        self.problem_label = self._label(problem_box, "", 17, weight="bold",
+                                         justify="left", anchor="w", wraplength=800)
+        self.problem_label.pack(fill="x", padx=18, pady=(0, 8))
+        self.goal_label = self._label(problem_box, "", 12, self.MUTED,
+                                      justify="left", anchor="w", wraplength=800)
+        self.goal_label.pack(fill="x", padx=18, pady=(0, 15))
 
-        divider = tk.Frame(card, height=1, bg="#29344e")
-        divider.pack(fill="x", padx=24)
-
-        mode_row = tk.Frame(card, bg=self.PANEL)
-        mode_row.pack(fill="x", padx=24, pady=(16, 8))
-        self._label(mode_row, "Cách viết:", 10, self.MUTED, bg=self.PANEL).pack(side="left")
-        tk.Radiobutton(mode_row, text="Nháp nhanh", variable=self.mode, value="informal",
-                       command=self.update_mode_note, bg=self.PANEL, fg=self.TEXT,
-                       selectcolor=self.PANEL_2, activebackground=self.PANEL,
-                       activeforeground=self.TEXT, font=("Segoe UI", 10)).pack(side="left", padx=(12, 6))
-        tk.Radiobutton(mode_row, text="Trình bày đi thi", variable=self.mode, value="official",
-                       command=self.update_mode_note, bg=self.PANEL, fg=self.TEXT,
-                       selectcolor=self.PANEL_2, activebackground=self.PANEL,
-                       activeforeground=self.TEXT, font=("Segoe UI", 10)).pack(side="left")
-        self.mode_note = self._label(mode_row, "", 9, self.MUTED, bg=self.PANEL)
+        mode_row = ctk.CTkFrame(card, fg_color="transparent")
+        mode_row.pack(fill="x", padx=24, pady=(5, 8))
+        self.segmented = ctk.CTkSegmentedButton(mode_row, values=["Nháp nhanh", "Trình bày đi thi"],
+                                                command=self.change_mode, height=36, corner_radius=9,
+                                                selected_color=self.ACCENT, selected_hover_color=self.ACCENT_HOVER,
+                                                unselected_color=self.PANEL_2, unselected_hover_color="#263554")
+        self.segmented.set("Nháp nhanh")
+        self.segmented.pack(side="left")
+        self.mode_note = self._label(mode_row, "", 11, self.MUTED)
         self.mode_note.pack(side="right")
 
-        self.prompt_label = self._label(card, "", 11, weight="bold", bg=self.PANEL,
-                                        justify="left", anchor="w", wraplength=720)
-        self.prompt_label.pack(fill="x", padx=24, pady=(6, 8))
-        self.answer = tk.Text(card, height=4, bg="#0f1728", fg=self.TEXT, insertbackground="white",
-                              selectbackground=self.ACCENT, relief="flat", font=("Segoe UI", 12),
-                              padx=14, pady=12, wrap="word", undo=True)
+        self.prompt_label = self._label(card, "", 14, weight="bold",
+                                        justify="left", anchor="w", wraplength=800)
+        self.prompt_label.pack(fill="x", padx=24, pady=(8, 9))
+        self.answer = ctk.CTkTextbox(card, height=104, fg_color=self.INPUT, border_width=1,
+                                     border_color=self.BORDER, corner_radius=12, text_color=self.TEXT,
+                                     font=ctk.CTkFont("Segoe UI", 15), wrap="word", undo=True)
         self.answer.pack(fill="x", padx=24)
         self.answer.bind("<Control-Return>", lambda _: self.check_answer())
 
-        actions = tk.Frame(card, bg=self.PANEL)
-        actions.pack(fill="x", padx=24, pady=14)
-        ttk.Button(actions, text="Kiểm tra bước này", style="Accent.TButton", command=self.check_answer).pack(side="left")
-        ttk.Button(actions, text="Tôi kẹt", style="Ghost.TButton", command=self.show_hint).pack(side="left", padx=8)
-        ttk.Button(actions, text="Xem app hiểu gì", style="Ghost.TButton", command=self.show_interpretation).pack(side="left")
-        ttk.Button(actions, text="Viết câu chuẩn", style="Ghost.TButton", command=self.show_official).pack(side="right")
+        actions = ctk.CTkFrame(card, fg_color="transparent")
+        actions.pack(fill="x", padx=24, pady=12)
+        self._button(actions, "Kiểm tra bước  →", self.check_answer, True).pack(side="left")
+        self._button(actions, "Gợi ý", self.show_hint).pack(side="left", padx=8)
+        self._button(actions, "App hiểu gì?", self.show_interpretation).pack(side="left")
+        self._button(actions, "Câu chuẩn", self.show_official).pack(side="right")
 
-        self.feedback = self._label(card, "", 10, self.MUTED, bg=self.PANEL_2,
-                                    justify="left", anchor="w", wraplength=720)
-        self.feedback.pack(fill="x", padx=24, pady=(0, 22), ipady=12)
+        self.feedback_box = ctk.CTkFrame(card, fg_color=self.PANEL_2, corner_radius=12)
+        self.feedback_box.pack(fill="x", padx=24, pady=(0, 22))
+        self.feedback_icon = self._label(self.feedback_box, "●", 14, self.ACCENT, "bold")
+        self.feedback_icon.pack(side="left", padx=(15, 9), pady=13, anchor="n")
+        self.feedback = self._label(self.feedback_box, "", 12, self.MUTED,
+                                    justify="left", anchor="w", wraplength=750)
+        self.feedback.pack(side="left", fill="x", expand=True, padx=(0, 14), pady=12)
+
+    def change_mode(self, value):
+        self.mode.set("informal" if value == "Nháp nhanh" else "official")
+        self.update_mode_note()
 
     def load_problem(self, index):
         self.problem_index = index
@@ -314,14 +345,14 @@ class MathTrainer(tk.Tk):
         saved = self.store.get(problem["id"])
         self.step_index = min(saved, len(problem["steps"]) - 1)
         for i, btn in enumerate(self.lesson_buttons):
-            btn.configure(bg=self.PANEL_2 if i == index else "#10182a",
-                          fg="white" if i == index else self.TEXT)
+            btn.configure(fg_color=self.PANEL_2 if i == index else "transparent",
+                          text_color="white" if i == index else self.TEXT)
         self.source_label.configure(text=problem["source"].upper())
         self.title_label.configure(text=problem["title"])
         self.problem_label.configure(text=problem["problem"])
         self.goal_label.configure(text="Mục tiêu: " + problem["goal"])
         self.answer.delete("1.0", "end")
-        self.feedback.configure(text="Cứ viết theo cách bạn đang nghĩ. App sẽ kiểm tra từng bước.", fg=self.MUTED)
+        self.set_feedback("Cứ viết theo cách bạn đang nghĩ. App sẽ kiểm tra từng bước.", self.MUTED)
         self.render_step()
         self.update_mode_note()
 
@@ -330,8 +361,7 @@ class MathTrainer(tk.Tk):
         step = problem["steps"][self.step_index]
         total = len(problem["steps"])
         self.prompt_label.configure(text=f"Bước {self.step_index + 1}: {step['prompt']}")
-        self.progress["maximum"] = total
-        self.progress["value"] = self.step_index
+        self.progress.set(self.step_index / total)
         self.progress_label.configure(text=f"{self.step_index}/{total} bước đã hoàn thành")
 
     def update_mode_note(self):
@@ -343,24 +373,28 @@ class MathTrainer(tk.Tk):
     def current_step(self):
         return PROBLEMS[self.problem_index]["steps"][self.step_index]
 
+    def set_feedback(self, text, color):
+        self.feedback.configure(text=text, text_color=color)
+        self.feedback_icon.configure(text_color=color)
+
     def show_interpretation(self):
         text = self.answer.get("1.0", "end").strip()
-        self.feedback.configure(text="App hiểu: " + interpret(text), fg=self.WARNING)
+        self.set_feedback("App hiểu: " + interpret(text), self.WARNING)
 
     def show_hint(self):
-        self.feedback.configure(text="Gợi ý nhẹ: " + self.current_step()["hint"], fg=self.WARNING)
+        self.set_feedback("Gợi ý nhẹ: " + self.current_step()["hint"], self.WARNING)
 
     def show_official(self):
-        self.feedback.configure(text="Cách trình bày đi thi:\n" + self.current_step()["official"], fg=self.ACCENT)
+        self.set_feedback("Cách trình bày đi thi:\n" + self.current_step()["official"], self.ACCENT)
 
     def check_answer(self):
         text = self.answer.get("1.0", "end").strip()
         if not text:
-            self.feedback.configure(text="Bạn chưa nhập bước giải. Nếu đang kẹt, hãy bấm “Tôi kẹt” nhé.", fg=self.WARNING)
+            self.set_feedback("Bạn chưa nhập bước giải. Nếu đang kẹt, hãy bấm “Gợi ý” nhé.", self.WARNING)
             return
         ok, reason = is_correct(self.current_step()["kind"], text)
         if not ok:
-            self.feedback.configure(text=f"App hiểu: {interpret(text)}\n\n{reason}", fg=self.DANGER)
+            self.set_feedback(f"App hiểu: {interpret(text)}\n\n{reason}", self.DANGER)
             return
         problem = PROBLEMS[self.problem_index]
         if self.step_index + 1 < len(problem["steps"]):
@@ -369,14 +403,18 @@ class MathTrainer(tk.Tk):
             self.store.set(problem["id"], self.step_index)
             self.answer.delete("1.0", "end")
             self.render_step()
-            self.feedback.configure(text="Đúng rồi. ✓\n\nCách trình bày đi thi:\n" + official, fg=self.SUCCESS)
+            self.set_feedback("Đúng rồi. ✓\n\nCách trình bày đi thi:\n" + official, self.SUCCESS)
         else:
             self.store.set(problem["id"], len(problem["steps"]))
-            self.progress["value"] = len(problem["steps"])
+            self.progress.set(1)
             self.progress_label.configure(text=f"{len(problem['steps'])}/{len(problem['steps'])} bước đã hoàn thành")
-            self.feedback.configure(text="Hoàn thành bài! ✓ Bạn đã đi hết đường giải, không chỉ tìm được đáp số.", fg=self.SUCCESS)
+            self.set_feedback("Hoàn thành bài! ✓ Bạn đã đi hết đường giải, không chỉ tìm được đáp số.", self.SUCCESS)
             messagebox.showinfo("Hoàn thành", "Bạn đã hoàn thành bài demo này!")
 
 
 if __name__ == "__main__":
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+    except (AttributeError, OSError):
+        pass
     MathTrainer().mainloop()
