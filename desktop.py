@@ -17,7 +17,7 @@ if __name__ == "__main__":
         pass
     page = resource_path("web/index.html").as_uri()
     webview.create_window(
-        "KHTN Math Trainer",
+        "KHTN Math Trainer 1.0",
         page,
         width=1280,
         height=820,
